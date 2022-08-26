@@ -91,12 +91,20 @@ published: true
 ここまでに作ったリソースを Terraform 化すると以下のようになります。普段 Terraform を使う人は参考にしてください。
 
 ```hcl
+data "http" "github_actions_openid_configuration" {
+  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+}
+
+data "tls_certificate" "github_actions" {
+  url = jsondecode(data.http.github_actions_openid_configuration.body).jwks_uri
+}
+
 resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = ["sts.amazonaws.com"]
 
-  thumbprint_list = ["a031c46782e6e6c662c2c87c76da9aa62ccabd8e"]
+  thumbprint_list = data.tls_certificate.github_actions.certificates[*].sha1_fingerprint
 }
 
 resource "aws_iam_role" "github_actions_oidc_test" {
@@ -121,6 +129,11 @@ resource "aws_iam_role" "github_actions_oidc_test" {
   })
 }
 ```
+
+:::message
+2022/08/26 追記
+記事公開時は `thumbprint_list` の値をベタ書きしていましたが、[Terraform だけを使って GitHub Actions OIDC ID プロパイダの thumbprint を計算する方法](https://zenn.dev/yukin01/articles/github-actions-oidc-provider-terraform)の記事とコメント欄を参考に、Terraform の [http](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) と [tls_certificate](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) の Data Source を使って自動で取得するように修正しました。
+:::
 
 ### GitHub Actions の設定
 
