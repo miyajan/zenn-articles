@@ -11,6 +11,6 @@
     "url": "https://github.com/miyajan/zenn-articles/issues"
   },
   "dependencies": {
-    "zenn-cli": "^0.1.141"
+    "zenn-cli": "^0.1.142"
   }
 }
