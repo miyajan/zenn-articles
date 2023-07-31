@@ -91,20 +91,13 @@ published: true
 ここまでに作ったリソースを Terraform 化すると以下のようになります。普段 Terraform を使う人は参考にしてください。
 
 ```hcl
-data "http" "github_actions_openid_configuration" {
-  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
-}
-
-data "tls_certificate" "github_actions" {
-  url = jsondecode(data.http.github_actions_openid_configuration.response_body).jwks_uri
-}
-
 resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
 
   client_id_list = ["sts.amazonaws.com"]
 
-  thumbprint_list = data.tls_certificate.github_actions.certificates[*].sha1_fingerprint
+  # dummy value
+  thumbprint_list = ["0123456789012345678901234567890123456789"]
 }
 
 resource "aws_iam_role" "github_actions_oidc_test" {
@@ -131,8 +124,11 @@ resource "aws_iam_role" "github_actions_oidc_test" {
 ```
 
 :::message
-2022/08/26 追記
-記事公開時は `thumbprint_list` の値をベタ書きしていましたが、[Terraform だけを使って GitHub Actions OIDC ID プロパイダの thumbprint を計算する方法](https://zenn.dev/yukin01/articles/github-actions-oidc-provider-terraform)の記事とコメント欄を参考に、Terraform の [http](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) と [tls_certificate](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) の Data Source を使って自動で取得するように修正しました。
+2023/07/31 追記
+GitHub Actions の OIDC と AWS の連携が改善され、`thumprint_list` の値は使われなくなりました。ただし、`thumbprint_list` の設定は必須なため、上の例ではダミーの値を指定しています。詳細は、[GitHub Actions - OIDC integration with AWS no longer requires pinning of intermediate TLS certificates - The GitHub Blog](https://github.blog/changelog/2023-07-13-github-actions-oidc-integration-with-aws-no-longer-requires-pinning-of-intermediate-tls-certificates/) を参照してください。
+
+~~2022/08/26 追記~~
+~~記事公開時は `thumbprint_list` の値をベタ書きしていましたが、[Terraform だけを使って GitHub Actions OIDC ID プロパイダの thumbprint を計算する方法](https://zenn.dev/yukin01/articles/github-actions-oidc-provider-terraform)の記事とコメント欄を参考に、Terraform の [http](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) と [tls_certificate](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/data-sources/certificate) の Data Source を使って自動で取得するように修正しました。~~
 :::
 
 ### GitHub Actions の設定
@@ -302,13 +298,19 @@ curl -s -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" "${ACTIONS_
 
 ### AWS の ID プロバイダの設定にあったサムプリントって何？
 
-例にあった通り、AWS だと ID プロバイダの設定画面でサムプリントが表示されます。これは、ID プロバイダの公開鍵証明書に署名した最上位の中間認証局の証明書のフィンガープリントから生成される値です。
+:::message
+2023/07/31 追記
 
-https://qiita.com/minamijoyo/items/eac99e4b1ca0926c4310
+上でも書いた通り、GitHub Actions の OIDC と AWS の連携が改善され、ID プロバイダの設定にあるサムプリントの値は使われなくなりました。詳細は、[GitHub Actions - OIDC integration with AWS no longer requires pinning of intermediate TLS certificates - The GitHub Blog](https://github.blog/changelog/2023-07-13-github-actions-oidc-integration-with-aws-no-longer-requires-pinning-of-intermediate-tls-certificates/) を参照してください。
+:::
 
-↑の記事がサムプリントの計算方法の参考になります。
+~~例にあった通り、AWS だと ID プロバイダの設定画面でサムプリントが表示されます。これは、ID プロバイダの公開鍵証明書に署名した最上位の中間認証局の証明書のフィンガープリントから生成される値です。~~
 
-[AWS のドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html)によると、サムプリントによってその中間認証局が発行した同じ DNS 名の証明書を信頼するとのことなので、ID プロバイダが公開鍵証明書を更新しても対応をする必要がなくなるということのようです。ただし、中間認証局の証明書の期限が 2028/10/22 となっているので、そのタイミングでは更新が必要になると思われます。
+~~https://qiita.com/minamijoyo/items/eac99e4b1ca0926c4310~~
+
+~~↑の記事がサムプリントの計算方法の参考になります。~~
+
+~~[AWS のドキュメント](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html)によると、サムプリントによってその中間認証局が発行した同じ DNS 名の証明書を信頼するとのことなので、ID プロバイダが公開鍵証明書を更新しても対応をする必要がなくなるということのようです。ただし、中間認証局の証明書の期限が 2028/10/22 となっているので、そのタイミングでは更新が必要になると思われます。~~
 
 ## まとめ
 
