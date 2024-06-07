@@ -4,6 +4,7 @@ emoji: "🐳"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["githubactions", "docker"]
 published: true
+publication_name: cybozu_ept
 ---
 
 2024/06/03 に GitHub Actions に Arm64 ランナーが追加されました。
