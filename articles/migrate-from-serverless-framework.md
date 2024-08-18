@@ -187,7 +187,7 @@ Lambda と一緒に IAM リソースをデプロイする場合は、`deploy` �
 
 SAM CLI のインストールは公式ドキュメントを参照してください。[^5]
 
-[^5]: Homebrew は公式サポートは終わったようですが、コミュニティサポートはあるようです（https://dev.classmethod.jp/articles/change-of-support-model-of-sam-cli-installation-experience-of-homebrew/）
+[^5]: Homebrew は公式サポートは終わったようですが、コミュニティサポートはあるようです（[参考](https://dev.classmethod.jp/articles/change-of-support-model-of-sam-cli-installation-experience-of-homebrew/)）
 
 @[card](https://docs.aws.amazon.com/ja_jp/serverless-application-model/latest/developerguide/install-sam-cli.html)
 
